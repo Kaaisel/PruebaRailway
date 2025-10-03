@@ -7,7 +7,12 @@ const dotenv = require("dotenv");
 dotenv.config();
 
 const app = express();
-app.use(cors({ origin: "*" })); // Ajusta a tu Angular si quieres seguridad
+app.use(cors({
+  origin: "https://prueva-vercel-ten.vercel.app",
+  methods: ["GET", "POST", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
+
 app.use(express.json());
 
 const pool = mysql.createPool({

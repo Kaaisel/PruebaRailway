@@ -9,9 +9,9 @@ dotenv.config();
 
 const app = express();
 
-// CORS: permitir tu frontend de Vercel
+// CORS: permitir solo tu frontend en producción
 app.use(cors({
-  origin: process.env.FRONTEND_URL || "*", // Mejor poner el dominio de tu frontend
+  origin: process.env.FRONTEND_URL || "*", // Cambiar por el dominio de Angular en Vercel
   methods: ["GET", "POST", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
@@ -19,19 +19,30 @@ app.use(cors({
 // Middleware para JSON
 app.use(express.json());
 
-// Pool de conexión a MySQL
-const pool = mysql.createPool({
-  host: process.env.DB_HOST,
-  port: Number(process.env.DB_PORT),
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
+// Pool de conexión a MySQL con manejo de errores
+let pool;
+try {
+  pool = mysql.createPool({
+    host: process.env.DB_HOST,
+    port: Number(process.env.DB_PORT),
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
+  });
+  console.log("✅ Pool de MySQL creado correctamente");
+} catch (err) {
+  console.error("❌ Error creando pool de MySQL:", err);
+}
+
+// Ruta raíz para pruebas
+app.get("/", (req, res) => {
+  res.send("Backend corriendo correctamente");
 });
 
-// Middleware para debug de opciones CORS
-app.options("*", cors());
-
-// Endpoint de login
+// Endpoint login
 app.post("/login", async (req, res) => {
   const { nombre, cont } = req.body;
 
@@ -70,16 +81,16 @@ app.post("/login", async (req, res) => {
     });
 
   } catch (err) {
-    console.error("Error en login:", err);
+    console.error("❌ Error en login:", err);
     res.status(500).json({ error: "Error en el servidor" });
   }
 });
 
-// Ruta raíz para pruebas
-app.get("/", (req, res) => {
-  res.send("Backend corriendo correctamente");
-});
+// Export para Vercel Serverless Function
+module.exports = app;
 
-// Iniciar servidor localmente (Vercel ignora esto)
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Servidor corriendo en http://localhost:${PORT}`));
+// Iniciar servidor localmente (opcional para pruebas)
+if (require.main === module) {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => console.log(`Servidor corriendo en http://localhost:${PORT}`));
+}

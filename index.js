@@ -61,6 +61,32 @@ app.post("/login", async (req, res) => {
   }
 });
 
+// Endpoint para obtener usuario por ID
+app.get("/usuarios/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const [rows] = await pool.query(
+      "SELECT id, nombre, t_usuario FROM usuarios WHERE id = ?",
+      [id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Error al obtener usuario:", err);
+    res.status(500).json({ error: "Error en el servidor" });
+  }
+});
+
+
+
+
+
+//Por encima todos los demas Endpoints
 // Export para Vercel
 module.exports = app;
 
